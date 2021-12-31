@@ -33,3 +33,5 @@ jobs:
         gist-filename: code-coverage.json
         gist-id: 1abf399f0a65d87b64a82025319e5324
         gist-auth-token: ${{ secrets.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 }}  
+    - name: Print code coverage
+      run: echo "Code coverage percentage ${{steps.create_coverage_badge.outputs.percentage}}%"
