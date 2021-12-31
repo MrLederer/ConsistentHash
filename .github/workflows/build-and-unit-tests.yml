@@ -1,4 +1,4 @@
-name: .NET
+name: build-and-unit-tests
 
 on:
   push:
