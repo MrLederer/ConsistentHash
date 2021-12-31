@@ -1,26 +1,54 @@
 # High performance Consistent Hash
-* Immutable 
-* Zero dependencies and super light weight
-* Thoroughly tested
-* Handles collisions
+* **Immutable** 
+* **Determinism**
+* **Zero dependencies** and **super light weight**
+* **Thoroughly tested**
+* **Handles collisions** in a deterministic manner
 
 Internally uses GetHashCode and XxHash for mapping nodes to values, and RadixSort for sorting
 
+NOTE: Determinism depends on `<TNode>.GetHashCode` `Comparer<TNode>.Default` `EqualityComparer<TNode>.Default` being determinstic.
 ## Usage
 ### Construction
 ```csharp
-nodeToWeight = new Dictionary<string, int>() 
+var nodeToWeight = new Dictionary<string, int>()
 {
   { "NodeA", 100 },
   { "NodeB", 150 },
-}
+};
 var hasher = ConsistentHash.Create(nodeToWeight);
 ```
 
 ### Hashing
 ```csharp
 var hasher = ConsistentHash.Create(nodeToWeight);
-var node = hasher.Hash(Guid.NewGuid());
+var value = Guid.NewGuid();
+var node = hasher.Hash(value);
+// node = "NodeB"
+```
+### AddOrSet / AddOrSetRange
+```csharp
+var hasher = ConsistentHash.Create(nodeToWeight); 
+// {NodeA: 100, NodeB: 150}
+hasher = hasher.AddOrSet(node: "NodeA", weight: 200); 
+// {NodeA: 200, NodeB: 150}
+hasher = hasher.AddOrSetRange(new Dictionary<string, int>() { { "NodeC", 500 }, {"NodeD", 35 } });
+// {NodeA: 200, NodeB: 150, NodeC: 500, NodeD: 35}
+hasher = hasher.AddOrSet(node: "NodeC", weight: 0);
+// {NodeA: 200, NodeB: 150, NodeD: 35}
+hasher = hasher.AddOrSet(node: "NodeD", weight: -100);
+// {NodeA: 200, NodeB: 150}
+```
+
+### Remove / RemoveRange
+```csharp
+// {NodeA: 200, NodeB: 150, NodeC: 500, NodeD: 35}
+hasher = hasher.Remove("NodeA");
+// {NodeB: 150, NodeC: 500, NodeD: 35}
+hasher = hasher.Remove("NonExistingNode");
+// {NodeB: 150, NodeC: 500, NodeD: 35}
+hasher = hasher.RemoveRange(new[] { "NodeC", "NodeD" });
+// {NodeB: 150}
 ```
 
 ## Performance 
