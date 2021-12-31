@@ -89,6 +89,11 @@ namespace ConsistentHashing
             return AddOrSetRange(new [] { new KeyValuePair<TNode, int>(node, weight) });
         }
 
+        /// <summary>
+        /// Adds or or set nodes with given weight.
+        /// </summary>
+        /// <param name="nodeToWeight">Nodes and coressponding weights.</param>
+        /// <returns></returns>
         public ConsistentHash<TNode> AddOrSetRange(IEnumerable<KeyValuePair<TNode, int>> nodeToWeight)
         {
             return Update(nodesToRemove: Array.Empty<TNode>(), nodesToAddOrSet: nodeToWeight);
