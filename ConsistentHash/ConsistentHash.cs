@@ -18,7 +18,6 @@ namespace ConsistentHashing
 
     // TODO: Add collision handling strategy
     // TODO: Add documentation to all public methods!
-    // TODO: Add nice ToString implementation!
     public class ConsistentHash<TNode> : IEquatable<ConsistentHash<TNode>>
     {
         private readonly Dictionary<TNode, NodeMetadata> m_nodeToMetadata;
@@ -54,6 +53,12 @@ namespace ConsistentHashing
             WeightCount = sectors.Length;
         }
 
+        /// <summary>
+        /// Hashes the specified value to a node.
+        /// </summary>
+        /// <typeparam name="TValue">The type of the value.</typeparam>
+        /// <param name="value">The value.</param>
+        /// <exception cref="System.InvalidOperationException">In case object is empty.</exception>
         public TNode Hash<TValue>(TValue value)
         {
             if (Count == 0)
@@ -74,6 +79,11 @@ namespace ConsistentHashing
             return m_sectors[index].m_node;
         }
 
+        /// <summary>
+        /// Adds or set the node the given weight.
+        /// </summary>
+        /// <param name="node">The node.</param>
+        /// <param name="weight">The weight.</param>
         public ConsistentHash<TNode> AddOrSet(TNode node, int weight)
         {
             return AddOrSetRange(new [] { new KeyValuePair<TNode, int>(node, weight) });
@@ -171,6 +181,25 @@ namespace ConsistentHashing
                 }
             }
             return true;
+        }
+
+        public override string ToString()
+        {
+            var result = new System.Text.StringBuilder(m_nodeToMetadata.Count * 8);
+            result = result.Append('{');
+            const string betweenElement = ", ";
+            foreach (var nodeAndMetadata in m_nodeToMetadata)
+            {
+                result = result.Append(nodeAndMetadata.Key).Append(':').Append(nodeAndMetadata.Value.m_weight).Append(betweenElement);
+            }
+            if (m_nodeToMetadata.Count > 0)
+            {
+                result = result.Remove(result.Length - betweenElement.Length, betweenElement.Length);
+            }
+            
+            result = result.Append('}');
+            return result.ToString();
+
         }
         #endregion Public methods
 

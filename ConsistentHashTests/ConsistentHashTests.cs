@@ -392,6 +392,25 @@ namespace ConsistentHashTests
             }
         }
 
+        [Test]
+        public void ToStringTest()
+        {
+            var nodeToWeight = GenerateNodeToWeight(amountOfNodes: 5);
+            var consistentHasher = ConsistentHash.Create(nodeToWeight);
+
+            var displayString = consistentHasher.ToString();
+            Assert.AreEqual("{Node1:100, Node2:200, Node3:300, Node4:400}", displayString);
+        }
+
+        [Test]
+        public void ToStringEmptyInstanceTest()
+        {
+            var consistentHasher = ConsistentHash.Empty<Node>();
+
+            var displayString = consistentHasher.ToString();
+            Assert.AreEqual("{}", displayString);
+        }
+
         #region Test Utilities
         private void AreEqual(ConsistentHash<Node> expectedConsistentHash, ConsistentHash<Node> actualConsistentHash)
         {
@@ -451,7 +470,7 @@ namespace ConsistentHashTests
         private Dictionary<Node, int> GenerateNodeToWeight(int amountOfNodes)
         {
             return Enumerable.Range(0, amountOfNodes)
-                .Select(index => (name: new Node(index.ToString()), weight: index * 100))
+                .Select(index => (name: new Node("Node"+index.ToString()), weight: index * 100))
                 .ToDictionary(tuple => tuple.name, tuple => tuple.weight);
         }
 
