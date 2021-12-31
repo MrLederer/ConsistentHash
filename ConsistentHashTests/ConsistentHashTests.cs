@@ -8,6 +8,36 @@ namespace ConsistentHashTests
 {
     public class ConsistentHashTests
     {
+        public void usageExamples()
+        {
+            var nodeToWeight = new Dictionary<string, int>()
+            {
+              { "NodeA", 100 },
+              { "NodeB", 150 },
+            };
+            var hasher = ConsistentHash.Create(nodeToWeight);
+            var value = Guid.NewGuid();
+            var node = hasher.Hash(value);
+
+            // {NodeA: 100, NodeB: 150}
+            hasher = hasher.AddOrSet(node: "NodeA", weight: 200);
+            // {NodeA: 200, NodeB: 150}
+            hasher = hasher.AddOrSetRange(new Dictionary<string, int>() { { "NodeC", 500 }, { "NodeD", 35 } });
+            // {NodeA: 200, NodeB: 150, NodeC: 500, NodeD: 35}
+            hasher = hasher.AddOrSet(node: "NodeC", weight: 0);
+            // {NodeA: 200, NodeB: 150, NodeD: 35}
+            hasher = hasher.AddOrSet(node: "NodeD", weight: -100);
+            // {NodeA: 200, NodeB: 150}
+
+            // {NodeA: 200, NodeB: 150, NodeC: 500, NodeD: 35}
+            hasher = hasher.Remove("NodeA");
+            // {NodeB: 150, NodeC: 500, NodeD: 35}
+            hasher = hasher.Remove("NonExistingNode");
+            // {NodeB: 150, NodeC: 500, NodeD: 35}
+            hasher = hasher.RemoveRange(new[] { "NodeC", "NodeD" });
+            // {NodeB: 150}
+        }
+
         [Test]
         public void ConsistencyTest()
         {
@@ -124,6 +154,41 @@ namespace ConsistentHashTests
 
             // Then..
             Assert.AreNotEqual(consistentHasher1.GetHashCode(), consistentHasher2.GetHashCode(), "instances with different creation param gave same hashcode");
+        }
+
+        [Test]
+        public void ContainsTest()
+        {
+            // Given.. 
+            var nodeToWeight = GenerateNodeToWeight(amountOfNodes: 100);
+            var consistentHasher = ConsistentHash.Create(nodeToWeight);
+
+            // Then..
+            foreach (var nodeAndWeight in nodeToWeight)
+            {
+                if (nodeAndWeight.Value > 0)
+                {
+                    Assert.IsTrue(consistentHasher.Contains(nodeAndWeight.Key), "instance was missing a defined node");
+                }
+            }
+        }
+
+        [Test]
+        public void TryGetWeightTest()
+        {
+            // Given.. 
+            var nodeToWeight = GenerateNodeToWeight(amountOfNodes: 100);
+            var consistentHasher = ConsistentHash.Create(nodeToWeight);
+
+            // Then..
+            foreach (var nodeAndWeight in nodeToWeight)
+            {
+                if (nodeAndWeight.Value > 0)
+                {
+                    Assert.IsTrue(consistentHasher.TryGetWeight(nodeAndWeight.Key, out var weight));
+                    Assert.AreEqual(nodeAndWeight.Value, weight, "instance had different weight than sent to ctor");
+                }
+            }
         }
 
         [Test]
@@ -327,7 +392,7 @@ namespace ConsistentHashTests
             }
         }
 
-
+        #region Test Utilities
         private void AreEqual(ConsistentHash<Node> expectedConsistentHash, ConsistentHash<Node> actualConsistentHash)
         {
             var keys = GenerateKeys(amount: 131_072).ToList();
@@ -427,5 +492,6 @@ namespace ConsistentHashTests
                 return m_name;
             }
         }
+        #endregion Utility methods
     }
 }

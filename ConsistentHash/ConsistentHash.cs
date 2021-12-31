@@ -5,18 +5,20 @@ namespace ConsistentHashing
 {
     public static class ConsistentHash
     {
-        public static ConsistentHash<TNode> Empty<TNode>(IComparer<TNode> comparer = null, uint seed = 0) where TNode : IEquatable<TNode>, IComparable<TNode>
+        public static ConsistentHash<TNode> Empty<TNode>(IComparer<TNode> comparer = null, IEqualityComparer<TNode> equalityComparer = null, uint seed = 0) where TNode : IEquatable<TNode>, IComparable<TNode>
         {
-            return Create(new Dictionary<TNode, int>(), comparer, seed);
+            return Create(new Dictionary<TNode, int>(), comparer, equalityComparer, seed);
         }
 
-        public static ConsistentHash<TNode> Create<TNode>(IEnumerable<KeyValuePair<TNode, int>> nodeToWeight, IComparer<TNode> comparer = null, uint seed = 0)
+        public static ConsistentHash<TNode> Create<TNode>(IEnumerable<KeyValuePair<TNode, int>> nodeToWeight, IComparer<TNode> comparer = null, IEqualityComparer<TNode> equalityComparer = null, uint seed = 0)
         {
-            return new ConsistentHash<TNode>(nodeToWeight, comparer, seed);
+            return new ConsistentHash<TNode>(nodeToWeight, comparer, equalityComparer, seed);
         }
     }
 
-    // TODO: Add collision handling
+    // TODO: Add collision handling strategy
+    // TODO: Add documentation to all public methods!
+    // TODO: Add nice ToString implementation!
     public class ConsistentHash<TNode> : IEquatable<ConsistentHash<TNode>>
     {
         private readonly Dictionary<TNode, NodeMetadata> m_nodeToMetadata;
@@ -24,21 +26,21 @@ namespace ConsistentHashing
         private readonly uint m_seed;
         private readonly IComparer<TNode> m_nodeComparer;
         private readonly Comparer<Sector<TNode>> m_sectorComparer;
+        private readonly IEqualityComparer<TNode> m_nodeEqualityComparer;
 
         #region Public methods
         public int Count => m_nodeToMetadata.Count;
 
         public int WeightCount { get; }
 
-        // TODO: Add collision handling strategy
-        // TODO: Add documentation to all public methods!
-        internal ConsistentHash(IEnumerable<KeyValuePair<TNode, int>> nodeToWeight, IComparer<TNode> comparer = null, uint seed = 0)
+        internal ConsistentHash(IEnumerable<KeyValuePair<TNode, int>> nodeToWeight, IComparer<TNode> comparer = null, IEqualityComparer<TNode> equalityComparer = null, uint seed = 0)
         {
             m_seed = seed;
             m_nodeComparer = comparer ?? Comparer<TNode>.Default;
             m_sectorComparer = Utils.GetSectorComparer(m_nodeComparer);
+            m_nodeEqualityComparer = equalityComparer ?? EqualityComparer<TNode>.Default;
             var (nodeInfo, totalWeight, _) = GetNodeInfo(nodeToWeight);
-            (m_nodeToMetadata, m_sectors) = CreateSectors(nodeInfo, totalWeight, m_seed);
+            (m_nodeToMetadata, m_sectors) = CreateSectors(nodeInfo, totalWeight, m_seed, m_nodeEqualityComparer);
             WeightCount = m_sectors.Length;
         }
 
@@ -85,7 +87,7 @@ namespace ConsistentHashing
 
         public ConsistentHash<TNode> Remove(TNode node)
         {
-            return RemoveRange(new HashSet<TNode> { node });
+            return RemoveRange(new [] { node });
         }
 
         public ConsistentHash<TNode> RemoveRange(IEnumerable<TNode> nodesToRemove)
@@ -98,10 +100,9 @@ namespace ConsistentHashing
             // Removing sectors
             var (verifiedNodesToRemove, verifiedWeightToRemoved) = GetVerifiedNodesToRemove(nodesToRemove, nodesToAddOrSet);
             var sectorsAfterRemoval = RemoveSectors(verifiedNodesToRemove, verifiedWeightToRemoved);
-
             // Adding sectors
             var (sortedNodesInfoToAddOrSet, verifiedAddedWeight, nodeCountThatIsAddingWeight) = GetNodeInfo(nodesToAddOrSet);
-            var (addOrSetNodeToMetadata, addedSortedSectors) = CreateSectors(sortedNodesInfoToAddOrSet, verifiedAddedWeight, m_seed);
+            var (addOrSetNodeToMetadata, addedSortedSectors) = CreateSectors(sortedNodesInfoToAddOrSet, verifiedAddedWeight, m_seed, m_nodeEqualityComparer);
             var mergedSortedSectors = MergeSortedWithSorted(sectorsAfterRemoval, addedSortedSectors);
             var mergedNodeToMetadata = CreateNewNodeToMetadata(m_nodeToMetadata, verifiedNodesToRemove, addOrSetNodeToMetadata, nodeCountThatIsAddingWeight);
             return new ConsistentHash<TNode>(mergedNodeToMetadata, mergedSortedSectors, m_nodeComparer, m_sectorComparer, m_seed);
@@ -227,13 +228,7 @@ namespace ConsistentHashing
         private (HashSet<TNode> verifiedNodesToRemove, int weightToRemove) GetVerifiedNodesToRemove(IEnumerable<TNode> nodesToRemove, IEnumerable<KeyValuePair<TNode, int>> nodesToAddOrSet)
         {
             var weightToRemoved = 0;
-            var canPerformSideEffects = false;
-            var verifiedNodesToRemove = nodesToRemove as HashSet<TNode>;
-            if (verifiedNodesToRemove == null)
-            {
-                verifiedNodesToRemove = new HashSet<TNode>(nodesToRemove);
-                canPerformSideEffects = true;
-            }
+            var verifiedNodesToRemove = new HashSet<TNode>(nodesToRemove, m_nodeEqualityComparer);
             foreach (var nodeToRemove in verifiedNodesToRemove)
             {
                 if (m_nodeToMetadata.TryGetValue(nodeToRemove, out var nodeMetadata))
@@ -242,11 +237,6 @@ namespace ConsistentHashing
                 }
                 else
                 {
-                    if (!canPerformSideEffects)
-                    {
-                        verifiedNodesToRemove = new HashSet<TNode>(verifiedNodesToRemove);
-                        canPerformSideEffects = true;
-                    }
                     verifiedNodesToRemove.Remove(nodeToRemove);
                 }
             }
@@ -256,11 +246,6 @@ namespace ConsistentHashing
                 if (m_nodeToMetadata.TryGetValue(nodeToAddOrSet.Key, out var nodeMetadata) && nodeToAddOrSet.Value < nodeMetadata.m_weight)
                 {
                     // The strategy to set a lower weight for a node is to remove it entirely and than add it again.
-                    if (!canPerformSideEffects)
-                    {
-                        verifiedNodesToRemove = new HashSet<TNode>(verifiedNodesToRemove);
-                        canPerformSideEffects = true;
-                    }
                     if (verifiedNodesToRemove.Add(nodeToAddOrSet.Key))
                     {
                         weightToRemoved += nodeMetadata.m_weight;
@@ -270,17 +255,17 @@ namespace ConsistentHashing
             return (verifiedNodesToRemove, weightToRemoved);
         }
 
-        private static (Dictionary<TNode, NodeMetadata>, Sector<TNode>[]) CreateSectors(List<(TNode, NodeMetadata, int)> sortedNodeInfo, int totalAmountOfSectors, uint seed)
+        private static (Dictionary<TNode, NodeMetadata>, Sector<TNode>[]) CreateSectors(List<(TNode, NodeMetadata, int)> sortedNodeInfo, int totalAmountOfSectors, uint seed, IEqualityComparer<TNode> nodeEqualityComparer)
         {
-            var (nodeToMetadata, unsortedSectors) = CreateUnsortedSectors(sortedNodeInfo, totalAmountOfSectors, seed);
+            var (nodeToMetadata, unsortedSectors) = CreateUnsortedSectors(sortedNodeInfo, totalAmountOfSectors, seed, nodeEqualityComparer);
             var sortedSectors = Utils.RadixSort(unsortedSectors);
             return (nodeToMetadata, sortedSectors);
         }
 
-        private static (Dictionary<TNode, NodeMetadata>, Sector<TNode>[]) CreateUnsortedSectors(List<(TNode, NodeMetadata, int)> sortedNodeInfo, int totalAmountOfSectors, uint seed)
+        private static (Dictionary<TNode, NodeMetadata>, Sector<TNode>[]) CreateUnsortedSectors(List<(TNode, NodeMetadata, int)> sortedNodeInfo, int totalAmountOfSectors, uint seed, IEqualityComparer<TNode> nodeEqualityComparer)
         {
             var sectors = new Sector<TNode>[totalAmountOfSectors];
-            var nodeToMetadata = new Dictionary<TNode, NodeMetadata>(sortedNodeInfo.Count);
+            var nodeToMetadata = new Dictionary<TNode, NodeMetadata>(sortedNodeInfo.Count, nodeEqualityComparer);
             var sectorsIndex = 0;
             foreach (var (node, metadata, newWeight) in sortedNodeInfo)
             {
