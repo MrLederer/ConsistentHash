@@ -1,3 +1,4 @@
+![_Consistent_Hash🪐](https://user-images.githubusercontent.com/16527376/147839020-5e88c335-6275-44ab-9614-e77badd9a7d0.png)
 # High performance Consistent Hash
 * **Immutable** 
 * **Determinism**
