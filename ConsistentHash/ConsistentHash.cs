@@ -1,27 +1,29 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace ConsistentHashing
 {
     public static class ConsistentHash
     {
-        public static ConsistentHash<TNode> Empty<TNode>(uint seed = 0) where TNode : IEquatable<TNode>, IComparable<TNode>
+        public static ConsistentHash<TNode> Empty<TNode>(IComparer<TNode> comparer = null, uint seed = 0) where TNode : IEquatable<TNode>, IComparable<TNode>
         {
-            return Create(new Dictionary<TNode, int>(), seed);
+            return Create(new Dictionary<TNode, int>(), comparer, seed);
         }
 
-        public static ConsistentHash<TNode> Create<TNode>(IEnumerable<KeyValuePair<TNode, int>> nodeToWeight, uint seed = 0) where TNode : IEquatable<TNode>, IComparable<TNode>
-        { 
-            return new ConsistentHash<TNode>(nodeToWeight, seed);
+        public static ConsistentHash<TNode> Create<TNode>(IEnumerable<KeyValuePair<TNode, int>> nodeToWeight, IComparer<TNode> comparer = null, uint seed = 0)
+        {
+            return new ConsistentHash<TNode>(nodeToWeight, comparer, seed);
         }
     }
 
-    public class ConsistentHash<TNode> : IEquatable<ConsistentHash<TNode>> where TNode : IEquatable<TNode>, IComparable<TNode>
+    // TODO: Add collision handling
+    public class ConsistentHash<TNode> : IEquatable<ConsistentHash<TNode>>
     {
         private readonly Dictionary<TNode, NodeMetadata> m_nodeToMetadata;
         private readonly Sector<TNode>[] m_sectors;
         private readonly uint m_seed;
+        private readonly IComparer<TNode> m_nodeComparer;
+        private readonly Comparer<Sector<TNode>> m_sectorComparer;
 
         #region Public methods
         public int Count => m_nodeToMetadata.Count;
@@ -29,18 +31,22 @@ namespace ConsistentHashing
         public int WeightCount { get; }
 
         // TODO: Add collision handling strategy
-        // TODO: Consider adding an enforced param that gives GetHashCode 
-        internal ConsistentHash(IEnumerable<KeyValuePair<TNode, int>> nodeToWeight, uint seed = 0)
+        // TODO: Add documentation to all public methods!
+        internal ConsistentHash(IEnumerable<KeyValuePair<TNode, int>> nodeToWeight, IComparer<TNode> comparer = null, uint seed = 0)
         {
             m_seed = seed;
+            m_nodeComparer = comparer ?? Comparer<TNode>.Default;
+            m_sectorComparer = Utils.GetSectorComparer(m_nodeComparer);
             var (nodeInfo, totalWeight, _) = GetNodeInfo(nodeToWeight);
             (m_nodeToMetadata, m_sectors) = CreateSectors(nodeInfo, totalWeight, m_seed);
             WeightCount = m_sectors.Length;
         }
 
-        private ConsistentHash(Dictionary<TNode, NodeMetadata> nodeToMetadata, Sector<TNode>[] sectors, uint seed)
+        private ConsistentHash(Dictionary<TNode, NodeMetadata> nodeToMetadata, Sector<TNode>[] sectors, IComparer<TNode> nodeComparer, Comparer<Sector<TNode>> sectorComparer, uint seed)
         {
             m_seed = seed;
+            m_nodeComparer = nodeComparer;
+            m_sectorComparer = sectorComparer;
             m_nodeToMetadata = nodeToMetadata;
             m_sectors = sectors;
             WeightCount = sectors.Length;
@@ -53,7 +59,7 @@ namespace ConsistentHashing
                 throw new InvalidOperationException("Object is empty! No nodes to hash value to.");
             }
 
-            var index = Array.BinarySearch(m_sectors, new Sector<TNode>(endAngle: (uint) value.GetHashCode(), node: default));
+            var index = Array.BinarySearch(m_sectors, new Sector<TNode>(endAngle: (uint) value.GetHashCode(), node: default), m_sectorComparer);
             if (index < 0)
             {
                 index = ~index;
@@ -98,7 +104,7 @@ namespace ConsistentHashing
             var (addOrSetNodeToMetadata, addedSortedSectors) = CreateSectors(sortedNodesInfoToAddOrSet, verifiedAddedWeight, m_seed);
             var mergedSortedSectors = MergeSortedWithSorted(sectorsAfterRemoval, addedSortedSectors);
             var mergedNodeToMetadata = CreateNewNodeToMetadata(m_nodeToMetadata, verifiedNodesToRemove, addOrSetNodeToMetadata, nodeCountThatIsAddingWeight);
-            return new ConsistentHash<TNode>(mergedNodeToMetadata, mergedSortedSectors, m_seed);
+            return new ConsistentHash<TNode>(mergedNodeToMetadata, mergedSortedSectors, m_nodeComparer, m_sectorComparer, m_seed);
         }
 
         public bool Contains(TNode node)
@@ -166,7 +172,8 @@ namespace ConsistentHashing
             return true;
         }
         #endregion Public methods
-        private static Sector<TNode>[] MergeSortedWithSorted(Sector<TNode>[] sectorsAfterRemoval, Sector<TNode>[] addedSortedSectors)
+
+        private Sector<TNode>[] MergeSortedWithSorted(Sector<TNode>[] sectorsAfterRemoval, Sector<TNode>[] addedSortedSectors)
         {
             if (sectorsAfterRemoval.Length == 0)
             {
@@ -177,7 +184,7 @@ namespace ConsistentHashing
                 return sectorsAfterRemoval;
             }
 
-            return Utils.MergeSortedWithSorted(sectorsAfterRemoval, addedSortedSectors);
+            return Utils.MergeSortedWithSorted(sectorsAfterRemoval, addedSortedSectors, m_sectorComparer);
         }
 
         private static Dictionary<TNode, NodeMetadata> CreateNewNodeToMetadata(Dictionary<TNode, NodeMetadata> currentNodeToMetadata, HashSet<TNode> nodesToRemove, Dictionary<TNode, NodeMetadata> addOrSetNodeToMetadata, int nodeThatWasSetCount)
@@ -348,7 +355,7 @@ namespace ConsistentHashing
                 }
             }
             // Sort the collection to make the output deterministic.
-            sortedNodeInfo.Sort((x, y) => x.node.CompareTo(y.node));
+            sortedNodeInfo.Sort((x, y) => m_nodeComparer.Compare(x.node, y.node));
             return (sortedNodeInfo, totalWeightCount, nodeCountThatIsAddingWeight);
         }
     }
@@ -367,7 +374,7 @@ namespace ConsistentHashing
         }
     }
 
-    internal struct Sector<TNode> : IComparable<Sector<TNode>> where TNode : IComparable<TNode>
+    internal struct Sector<TNode>
     {
 
         public readonly uint m_endAngle;
@@ -377,20 +384,6 @@ namespace ConsistentHashing
         {
             m_endAngle = endAngle;
             m_node = node;
-        }
-
-        public int CompareTo(Sector<TNode> other)
-        {
-            var value = m_endAngle.CompareTo(other.m_endAngle);
-            if (value != 0)
-            {
-                return value;
-            }
-            else if (m_node == null)
-            {
-                return other.m_node == null ? 0 : -1;
-            }
-            return m_node.CompareTo(other.m_node);
         }
     }
 }

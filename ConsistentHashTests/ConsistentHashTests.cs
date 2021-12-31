@@ -405,7 +405,7 @@ namespace ConsistentHashTests
 
             public bool Equals(Node other)
             {
-                return m_name.Equals(other.m_name, StringComparison.Ordinal);
+                return m_name.Equals(other?.m_name, StringComparison.Ordinal);
             }
 
             public override bool Equals(object obj)

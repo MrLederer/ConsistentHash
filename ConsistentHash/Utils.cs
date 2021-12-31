@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ConsistentHashing
 {
@@ -6,7 +7,7 @@ namespace ConsistentHashing
     {
         private const int numberOfBitsPerIteration = 8;
         private const int numberOfBucketsPerIteration = 1 << numberOfBitsPerIteration;
-        internal static Sector<T>[] RadixSort<T>(Sector<T>[] sectors) where T : IComparable<T>
+        internal static Sector<T>[] RadixSort<T>(Sector<T>[] sectors)
         {
             var nextIterationSectors = new Sector<T>[sectors.Length];
             var buckets = new uint[numberOfBucketsPerIteration];
@@ -47,7 +48,38 @@ namespace ConsistentHashing
             return sectors;
         }
 
-        internal static Sector<T>[] MergeSortedWithSorted<T>(Sector<T>[] sortedSectors1, Sector<T>[] sortedSectors2) where T : IComparable<T>
+        internal static Comparer<Sector<T>> GetSectorComparer<T>(IComparer<T> comparer)
+        {
+            return Comparer<Sector<T>>.Create((Sector<T> x, Sector<T> y) =>
+            {
+                var value = x.m_endAngle.CompareTo(y.m_endAngle);
+                if (value != 0)
+                {
+                    return value;
+                }
+
+                var xIsDefault = (x.m_node == null) || x.m_node.Equals(default);
+                var yIsDefault = (y.m_node == null) || y.m_node.Equals(default);
+                if (xIsDefault && yIsDefault)
+                {
+                    return 0;
+                }
+                else if (xIsDefault)
+                {
+                    return -1;
+                }
+                else if (yIsDefault)
+                {
+                    return 1;
+                }
+                else
+                {
+                    return comparer.Compare(x.m_node, y.m_node);
+                }
+            });
+        }
+
+        internal static Sector<T>[] MergeSortedWithSorted<T>(Sector<T>[] sortedSectors1, Sector<T>[] sortedSectors2, Comparer<Sector<T>> comparer)
         {
             var result = new Sector<T>[sortedSectors1.Length + sortedSectors2.Length];
             var index1 = 0;
@@ -63,7 +95,7 @@ namespace ConsistentHashing
                 {
                     result[resultIndex++] = sortedSectors1[index1++];
                 }
-                else if (sortedSectors1[index1].CompareTo(sortedSectors2[index2]) > 0)
+                else if (comparer.Compare(sortedSectors1[index1], sortedSectors2[index2]) > 0)
                 {
                     result[resultIndex++] = sortedSectors2[index2++];
                 }

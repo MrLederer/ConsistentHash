@@ -92,7 +92,7 @@ namespace ConsistentHashTests
             var sorted2 = Enumerable.Range(start: 100, count: 100).Select(index => new Sector<int>((uint)index, index)).ToArray();
 
             // When..
-            var actual = Utils.MergeSortedWithSorted(sorted1, sorted2);
+            var actual = Utils.MergeSortedWithSorted(sorted1, sorted2, Utils.GetSectorComparer(Comparer<int>.Default));
             var expected = Enumerable.Range(0, 200).Select(index => new Sector<int>((uint)index, index)).ToArray();
 
             // Then..
@@ -109,7 +109,7 @@ namespace ConsistentHashTests
                 .Select(index => new Sector<int>((uint)index, index)).ToArray();
 
             // When..
-            var actual = Utils.MergeSortedWithSorted(sorted1, sorted2);
+            var actual = Utils.MergeSortedWithSorted(sorted1, sorted2, Utils.GetSectorComparer(Comparer<int>.Default));
             var expected = Enumerable.Range(0, 200).Select(index => new Sector<int>((uint)index, index)).ToArray();
 
             // Then..
