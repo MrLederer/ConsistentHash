@@ -4,7 +4,6 @@
 ![GitHub issues](https://img.shields.io/github/issues-raw/MrLederer/ConsistentHash)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/MrLederer/ConsistentHash/build-and-unit-tests)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=shields)](http://makeapullrequest.com)
-![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/MrLederer/1abf399f0a65d87b64a82025319e5324/raw/code-coverage.json)
 # High performance Consistent Hash
 * **Immutable** 
 * **Determinism**
