@@ -199,7 +199,6 @@ namespace ConsistentHashing
             
             result = result.Append('}');
             return result.ToString();
-
         }
         #endregion Public methods
 
