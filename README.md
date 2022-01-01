@@ -2,17 +2,10 @@
 
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/MrLederer/ConsistentHash/build-and-unit-tests)
 ![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/carmellederer/ConsistentHash/2)
-# High performance Consistent Hash
-* **Immutable** 
-* **Determinism**
-* **Zero dependencies** and **super light weight**
-* **Thoroughly tested**
-* **Handles collisions** in a deterministic manner
+![Nuget](https://img.shields.io/nuget/v/ConsistentHash)
 
-Internally uses GetHashCode and XxHash for mapping nodes to values, and RadixSort for sorting
-
-NOTE: Determinism depends on `<TNode>.GetHashCode` `Comparer<TNode>.Default` `EqualityComparer<TNode>.Default` being determinstic.
-## Usage
+A high performance, immutable, light-weight, and with no dependencies, ring consistent hash library.
+## 💻 Usage
 ### Construction
 ```csharp
 var nodeToWeight = new Dictionary<string, int>()
@@ -55,7 +48,15 @@ hasher = hasher.RemoveRange(new[] { "NodeC", "NodeD" });
 // {NodeB: 150}
 ```
 
-## Performance 
+# 🌟 Features
+* **High performance** - Internally uses GetHashCode and XxHash for mapping nodes to values, and RadixSort for sorting
+* **Immutable** 
+* **Determinism**
+* **Zero dependencies** and **super light weight**
+* **Thoroughly tested**
+* **Handles collisions** in a deterministic manner
+
+## ⚡️ Performance 
 ### API runtime and memory
 *Operation*|*Runtime*|*Memory usage*|*Details*
 --- | --- | --- | :--
@@ -67,4 +68,7 @@ Update | O(&sum;<sup>n</sup><sub>i=0</sub>N<sub>i</sub>) | O(&sum;<sup>n</sup><s
 Contains | O(1) | n/a |
 TryGetWeight | O(1) | n/a |
 Equals | O(N) | n/a | N = Number of nodes
-### Distribution
+### Benchmarks Distribution
+
+## 📃 License
+
