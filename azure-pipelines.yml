@@ -35,4 +35,4 @@ steps:
   inputs:
     command: 'test'
     projects: '**/ConsistentHashTests.csproj'
-    arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'
+    arguments: '--configuration $(buildConfiguration) --collect "Code coverage" --settings:"CodeCoverage.runsettings"'
