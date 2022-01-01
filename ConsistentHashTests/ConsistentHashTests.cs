@@ -10,36 +10,6 @@ namespace ConsistentHashTests
     [ExcludeFromCodeCoverage]
     public class ConsistentHashTests
     {
-        public void usageExamples()
-        {
-            var nodeToWeight = new Dictionary<string, int>()
-            {
-              { "NodeA", 100 },
-              { "NodeB", 150 },
-            };
-            var hasher = ConsistentHash.Create(nodeToWeight);
-            var value = Guid.NewGuid();
-            var node = hasher.Hash(value);
-
-            // {NodeA: 100, NodeB: 150}
-            hasher = hasher.AddOrSet(node: "NodeA", weight: 200);
-            // {NodeA: 200, NodeB: 150}
-            hasher = hasher.AddOrSetRange(new Dictionary<string, int>() { { "NodeC", 500 }, { "NodeD", 35 } });
-            // {NodeA: 200, NodeB: 150, NodeC: 500, NodeD: 35}
-            hasher = hasher.AddOrSet(node: "NodeC", weight: 0);
-            // {NodeA: 200, NodeB: 150, NodeD: 35}
-            hasher = hasher.AddOrSet(node: "NodeD", weight: -100);
-            // {NodeA: 200, NodeB: 150}
-
-            // {NodeA: 200, NodeB: 150, NodeC: 500, NodeD: 35}
-            hasher = hasher.Remove("NodeA");
-            // {NodeB: 150, NodeC: 500, NodeD: 35}
-            hasher = hasher.Remove("NonExistingNode");
-            // {NodeB: 150, NodeC: 500, NodeD: 35}
-            hasher = hasher.RemoveRange(new[] { "NodeC", "NodeD" });
-            // {NodeB: 150}
-        }
-
         [Test]
         public void ConsistencyTest()
         {
