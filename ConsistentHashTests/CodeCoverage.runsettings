@@ -29,7 +29,7 @@ Included items must then not match any entries in the exclude list to remain inc
 						<!-- Match assembly file paths: -->
 						<ModulePaths>
 							<Include>
-								<Source>.*\\ConsistentHash\consistenthash.dll</Source>
+								<Source>.*\\ConsistentHash\consistenthash\.dll$</Source>
 							</Include>
 							<Exclude>
 								<ModulePath>.*nunit.*</ModulePath>
