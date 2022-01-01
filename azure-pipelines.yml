@@ -30,16 +30,9 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
-- task: VSTest@2
+- task: DotNetCoreCLI@2
+  displayName: dotnet test
   inputs:
-    testSelector: 'testAssemblies'
-    testAssemblyVer2: |
-      **\*Test*.dll
-      !**\*TestAdapter.dll
-      !**\obj\**
-    searchFolder: '$(System.DefaultWorkingDirectory)'
-    runInParallel: true
-    runTestsInIsolation: false
-    codeCoverageEnabled: true
-    testRunTitle: 'Test run'
-    failOnMinTestsNotRun: true
+    command: 'test'
+    projects: '**/ConsistentHashTests.csproj'
+    arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'
