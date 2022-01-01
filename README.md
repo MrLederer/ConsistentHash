@@ -1,9 +1,7 @@
 ![_Consistent_Hash🪐](https://user-images.githubusercontent.com/16527376/147839020-5e88c335-6275-44ab-9614-e77badd9a7d0.png)
 
-![GitHub last commit](https://img.shields.io/github/last-commit/MrLederer/ConsistentHash)
-![GitHub issues](https://img.shields.io/github/issues-raw/MrLederer/ConsistentHash)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/MrLederer/ConsistentHash/build-and-unit-tests)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=shields)](http://makeapullrequest.com)
+![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/carmellederer/ConsistentHash/2)
 # High performance Consistent Hash
 * **Immutable** 
 * **Determinism**
