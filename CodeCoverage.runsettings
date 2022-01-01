@@ -1,0 +1,8 @@
+﻿<ModulePaths>
+	<Exclude>
+		<ModulePath>.*NUnit3.*</ModulePath>
+	</Exclude>
+	<Exclude>
+		<ModulePath>.*tests.*</ModulePath>
+	</Exclude>
+</ModulePaths>
