@@ -18,14 +18,11 @@ var hasher = ConsistentHash.Create(nodeToWeight);
 
 ### Hashing
 ```csharp
-var hasher = ConsistentHash.Create(nodeToWeight);
-var value = Guid.NewGuid();
-var node = hasher.Hash(value);
+var node = hasher.Hash(Guid.NewGuid());
 // node = "NodeB"
 ```
 ### AddOrSet / AddOrSetRange
 ```csharp
-var hasher = ConsistentHash.Create(nodeToWeight); 
 // {NodeA: 100, NodeB: 150}
 hasher = hasher.AddOrSet(node: "NodeA", weight: 200); 
 // {NodeA: 200, NodeB: 150}
@@ -54,10 +51,10 @@ hasher = hasher.RemoveRange(new[] { "NodeC", "NodeD" });
 * **Determinism**
 * **Zero dependencies** and **super light weight**
 * **Thoroughly tested**
-* **Handles collisions** in a deterministic manner
+* **Handles collisions** in a deterministic manner (WIP)
 
 ## ⚡️ Performance 
-### API runtime and memory
+### 📉 API runtime and memory
 *Operation*|*Runtime*|*Memory usage*|*Details*
 --- | --- | --- | :--
 Hash | O(log(N)) | n/a | N = Number of nodes
@@ -68,7 +65,9 @@ Update | O(&sum;<sup>n</sup><sub>i=0</sub>N<sub>i</sub>) | O(&sum;<sup>n</sup><s
 Contains | O(1) | n/a |
 TryGetWeight | O(1) | n/a |
 Equals | O(N) | n/a | N = Number of nodes
-### Benchmarks Distribution
 
+NOTE: Any altering call creates a new instance, so costing sum of all weights.
+
+### 📊 Distribution Benchmarks (WIP)
 ## 📃 License
-
+ConsistentHash🪐 is free and open-source software licensed under the [GNU General Public License](https://www.gnu.org/licenses/gpl-3.0.en.html)
