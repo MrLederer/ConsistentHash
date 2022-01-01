@@ -3,13 +3,33 @@ using System.Collections.Generic;
 
 namespace ConsistentHashing
 {
+    /// <summary>
+    /// Provides a set of initialization methods for instances of <see cref="ConsistentHash{TNode}">ConsistentHashing.ConsistentHash</see> class
+    /// </summary>
     public static class ConsistentHash
     {
+        /// <summary>
+        /// Gets an empty ConsistentHash.
+        /// </summary>
+        /// <typeparam name="TNode">The type of the node.</typeparam>
+        /// <param name="comparer">The implementation to use to determine the order of nodes.</param>
+        /// <param name="equalityComparer">The implementation to use to determine the equality of nodes.</param>
+        /// <param name="seed">A number used to calculate a starting value per node.</param>
+        /// <returns>An empty ConsistentHash</returns>
         public static ConsistentHash<TNode> Empty<TNode>(IComparer<TNode> comparer = null, IEqualityComparer<TNode> equalityComparer = null, uint seed = 0) where TNode : IEquatable<TNode>, IComparable<TNode>
         {
             return Create(new Dictionary<TNode, int>(), comparer, equalityComparer, seed);
         }
 
+        /// <summary>
+        /// Creates a new immutable ConsistentHash that contains the specified node/weight pairs and uses the specified node comparer and equality comparer.
+        /// </summary>
+        /// <typeparam name="TNode">The type of the node.</typeparam>
+        /// <param name="nodeToWeight">The node/weight pairs to add.</param>
+        /// <param name="comparer">The implementation to use to determine the order of nodes.</param>
+        /// <param name="equalityComparer">The implementation to use to determine the equality of nodes.</param>
+        /// <param name="seed">A number used to calculate a starting value per node.</param>
+        /// <returns>A new immutable ConsistentHash that contains the node/weight pairs.</returns>
         public static ConsistentHash<TNode> Create<TNode>(IEnumerable<KeyValuePair<TNode, int>> nodeToWeight, IComparer<TNode> comparer = null, IEqualityComparer<TNode> equalityComparer = null, uint seed = 0)
         {
             return new ConsistentHash<TNode>(nodeToWeight, comparer, equalityComparer, seed);
@@ -18,6 +38,10 @@ namespace ConsistentHashing
 
     // TODO: Add collision handling strategy
     // TODO: Add documentation to all public methods!
+    /// <summary>
+    /// An immutable, high performance, and customizable ring consistent hash implementation.
+    /// </summary>
+    /// <typeparam name="TNode">The type of the node.</typeparam>
     public class ConsistentHash<TNode> : IEquatable<ConsistentHash<TNode>>
     {
         private readonly Dictionary<TNode, NodeMetadata> m_nodeToMetadata;
@@ -28,8 +52,14 @@ namespace ConsistentHashing
         private readonly IEqualityComparer<TNode> m_nodeEqualityComparer;
 
         #region Public methods
+        /// <summary>
+        /// Gets the number of nodes contained in the ConsistentHash.
+        /// </summary>
         public int Count => m_nodeToMetadata.Count;
 
+        /// <summary>
+        /// Gets the aggregated weight per node in the ConsistentHash.
+        /// </summary>
         public int WeightCount { get; }
 
         internal ConsistentHash(IEnumerable<KeyValuePair<TNode, int>> nodeToWeight, IComparer<TNode> comparer = null, IEqualityComparer<TNode> equalityComparer = null, uint seed = 0)
@@ -58,6 +88,7 @@ namespace ConsistentHashing
         /// </summary>
         /// <typeparam name="TValue">The type of the value.</typeparam>
         /// <param name="value">The value.</param>
+        /// <returns>The matching node that value is hashed to.</returns>
         /// <exception cref="System.InvalidOperationException">In case object is empty.</exception>
         public TNode Hash<TValue>(TValue value)
         {
@@ -80,36 +111,53 @@ namespace ConsistentHashing
         }
 
         /// <summary>
-        /// Adds or set the node the given weight.
+        /// Adds or sets the specified node and weight to the ConsistentHash.
         /// </summary>
-        /// <param name="node">The node.</param>
+        /// <param name="node">The node to add or set.</param>
         /// <param name="weight">The weight.</param>
+        /// <returns>A new immutable ConsistentHash that contains the additional/updated node and weight.</returns>
         public ConsistentHash<TNode> AddOrSet(TNode node, int weight)
         {
             return AddOrSetRange(new [] { new KeyValuePair<TNode, int>(node, weight) });
         }
 
         /// <summary>
-        /// Adds or or set nodes with given weight.
+        /// Adds or sets the specified node/weight pairs to the consistenthash.
         /// </summary>
-        /// <param name="nodeToWeight">Nodes and coressponding weights.</param>
-        /// <returns></returns>
+        /// <param name="nodeToWeight">Node/weight pairs to add or set.</param>
+        /// <returns>A new immutable ConsistentHash that contains the additional/updated node/weight pairs</returns>
         public ConsistentHash<TNode> AddOrSetRange(IEnumerable<KeyValuePair<TNode, int>> nodeToWeight)
         {
             return Update(nodesToRemove: Array.Empty<TNode>(), nodesToAddOrSet: nodeToWeight);
 
         }
 
+        /// <summary>
+        /// Removes the specified node.
+        /// </summary>
+        /// <param name="node">The node to remove.</param>
+        /// <returns>A new immutable ConsistentHash that removed the node.</returns>
         public ConsistentHash<TNode> Remove(TNode node)
         {
             return RemoveRange(new [] { node });
         }
 
+        /// <summary>
+        /// Removes the specified node collection.
+        /// </summary>
+        /// <param name="nodesToRemove">The nodes to remove.</param>
+        /// <returns>A new immutable ConsistentHash that removed the nodes collection.</returns>
         public ConsistentHash<TNode> RemoveRange(IEnumerable<TNode> nodesToRemove)
         {
             return Update(nodesToRemove: nodesToRemove, nodesToAddOrSet: Array.Empty<KeyValuePair<TNode, int>>());
         }
 
+        /// <summary>
+        /// Updates the specified instance, with specified node/weight pairs to add or set, and nodes to remove.
+        /// </summary>
+        /// <param name="nodesToRemove">Node collection to remove.</param>
+        /// <param name="nodesToAddOrSet">Node/weight pairs to add or set.</param>
+        /// <returns>A new updated immutable ConsistentHash.</returns>
         public ConsistentHash<TNode> Update(IEnumerable<TNode> nodesToRemove, IEnumerable<KeyValuePair<TNode, int>> nodesToAddOrSet)
         {
             // Removing sectors
@@ -123,11 +171,22 @@ namespace ConsistentHashing
             return new ConsistentHash<TNode>(mergedNodeToMetadata, mergedSortedSectors, m_nodeComparer, m_sectorComparer, m_seed);
         }
 
+        /// <summary>
+        /// Determines whether the ConsistentHash contains the node.
+        /// </summary>
+        /// <param name="node">The node.</param>
+        /// <returns><c>true</c> if node is found; otherwise, <c>false</c>.</returns>
         public bool Contains(TNode node)
         {
             return m_nodeToMetadata.ContainsKey(node);
         }
 
+        /// <summary>
+        /// Tries to get the weight associated with the specified key.
+        /// </summary>
+        /// <param name="node">The node.</param>
+        /// <param name="weight">The weight associated with the node.</param>
+        /// <returns><c>true</c> if node is found; otherwise, <c>false</c>.</returns>
         public bool TryGetWeight(TNode node, out int weight)
         {
             if (m_nodeToMetadata.TryGetValue(node, out var metadata))
@@ -160,6 +219,11 @@ namespace ConsistentHashing
             return hash.ToHashCode();
         }
 
+        /// <summary>
+        /// Indicates whether the current object is equal to another object of the same type.
+        /// </summary>
+        /// <param name="other">An object to compare with this object.</param>
+        /// <returns><c>true</c> if the current object is equal to the <paramref name="other" /> parameter; otherwise, <c>false</c>.</returns>
         public bool Equals(ConsistentHash<TNode> other)
         {
             if (m_seed != other.m_seed)
@@ -378,7 +442,7 @@ namespace ConsistentHashing
         }
     }
 
-    public struct NodeMetadata
+    internal struct NodeMetadata
     {
         public readonly uint m_nodeSeed;
         public readonly uint m_lastCalculatedAngle;
