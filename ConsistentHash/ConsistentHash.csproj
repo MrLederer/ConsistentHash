@@ -13,6 +13,7 @@
     <PackageTags>consistenthash, consistent, hash, hashing, ring, hasher, loadbalancing</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
     <PackageIconUrl />
+    <Version>1.0.1.0</Version>
   </PropertyGroup>
 	<ItemGroup>
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
