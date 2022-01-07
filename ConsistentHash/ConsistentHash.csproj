@@ -13,6 +13,7 @@
     <PackageTags>consistenthash, consistent, hash, hashing, ring, hasher, loadbalancing</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
     <PackageIconUrl />
+	<CheckEolTargetFramework>false</CheckEolTargetFramework>
     <Version>1.0.1.0</Version>
   </PropertyGroup>
 	<ItemGroup>
