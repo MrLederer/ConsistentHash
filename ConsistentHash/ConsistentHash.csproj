@@ -1,11 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	<NoWarn>$(NoWarn);1591</NoWarn>
     <Authors>Carmel Lederer</Authors>
     <Company />
-    <Description>A high performance, immutable, light-weight, and with no dependencies, ring consistent hash library.</Description>
+    <Description>A high performance, immutable, light-weight, dependency-free, ring consistent hash library.</Description>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/MrLederer/ConsistentHash</PackageProjectUrl>
     <RepositoryUrl>https://github.com/MrLederer/ConsistentHash</RepositoryUrl>
