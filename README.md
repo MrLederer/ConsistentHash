@@ -4,7 +4,7 @@
 ![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/carmellederer/ConsistentHash/2)
 ![Nuget](https://img.shields.io/nuget/v/ConsistentHash)
 
-A high performance, immutable, light-weight, and with no dependencies, ring consistent hash library.
+A high performance, immutable, light-weight, dependency-free, ring consistent hash library.
 ## 💻 Usage
 ### Construction
 ```csharp
@@ -47,11 +47,12 @@ hasher = hasher.RemoveRange(new[] { "NodeC", "NodeD" });
 
 # 🌟 Features
 * **High performance** - Internally uses GetHashCode and XxHash for mapping nodes to values, and RadixSort for sorting
+* **Deterministic** - Given particular node/weight pairs, and hash key, the hash result will be identical.
 * **Immutable** 
-* **Determinism**
-* **Zero dependencies** and **super light weight**
-* **Thoroughly tested**
 * **Handles collisions** in a deterministic manner (WIP)
+* **Thoroughly tested**
+* **Zero dependencies**
+* **Super light weight**
 
 ## ⚡️ Performance 
 ### 📉 API runtime and memory
