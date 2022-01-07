@@ -37,7 +37,8 @@ namespace ConsistentHashing
     }
 
     // TODO: Add collision handling strategy
-    // TODO: Add documentation to all public methods!
+    // TOOD: Add performance benchmarks tests
+    // TOOD: Add distribution benchmarks tests
     /// <summary>
     /// An immutable, high performance, and customizable ring consistent hash implementation.
     /// </summary>
