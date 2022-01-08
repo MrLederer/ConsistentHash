@@ -210,14 +210,14 @@ namespace ConsistentHashing
 
         public override int GetHashCode()
         {
-            var hash = new HashCode();
-            hash.Add(m_seed);
-            hash.Add(Count);
+            var hash = 17;
+            hash += 23 * ((int)m_seed);
+            hash += 23 * Count;
             foreach (var nodeAndMetadata in m_nodeToMetadata)
             {
-                hash.Add(nodeAndMetadata);
+                hash += 23 * nodeAndMetadata.GetHashCode();
             }
-            return hash.ToHashCode();
+            return hash;
         }
 
         /// <summary>
@@ -420,8 +420,10 @@ namespace ConsistentHashing
             {
                 sortedNodeInfo = new List<(TNode node, NodeMetadata metadata, int newWeight)>();
             }
-            foreach (var (node, newWeight) in nodeToWeight)
+            foreach (var nodeAndWeight in nodeToWeight)
             {
+                var newWeight = nodeAndWeight.Value;
+                var node = nodeAndWeight.Key;
                 if (newWeight > 0)
                 {
                     if (m_nodeToMetadata != null && m_nodeToMetadata.TryGetValue(node, out var currentMetadata) && currentMetadata.m_weight <= newWeight)
